@@ -28,6 +28,7 @@ class ScrapeYCombinate extends Command
 
     public function __construct(
         private readonly HTML5 $DOMInitiator,
+        private readonly ScrapedArticle $model,
     ) {
         parent::__construct();
     }
@@ -40,7 +41,7 @@ class ScrapeYCombinate extends Command
         $data = $this->getWebsiteContentObject();
         $data = $data->getElementsByTagName('table');
         /** @var \DOMElement $table */
-        foreach ($data->getIterator() as $index => $table) {
+        foreach ($data as $index => $table) {
             if ($index == self::SCRAPE_TABLE_INDEX) {
                 break;
             }
@@ -58,7 +59,7 @@ class ScrapeYCombinate extends Command
                     continue;
                 }
                 /** @var \DOMElement $spanElement */
-                foreach ($domTRow->getElementsByTagName('span')->getIterator() as $spanElement) {
+                foreach ($domTRow->getElementsByTagName('span') as $spanElement) {
                     if ($spanElement->className === 'titleline') {
                         break;
                     }
@@ -68,7 +69,7 @@ class ScrapeYCombinate extends Command
                 $article->source = \Str::isUrl($source)? $source : self::SCRAPE_URL . $source;
             } elseif ($domTRow->className === '' && $article) {
                 /** @var \DOMElement $spanElement */
-                foreach ($domTRow->getElementsByTagName('span')->getIterator() as $spanElement) {
+                foreach ($domTRow->getElementsByTagName('span') as $spanElement) {
                     if ($spanElement->id === 'score_' . $article->scrape_source_id) {
                         $article->addAdditionalData('score', (int)$spanElement->nodeValue);
                         if ($article->exists) {
@@ -92,7 +93,7 @@ class ScrapeYCombinate extends Command
 
     private function findModel($id): ScrapedArticle
     {
-        return ScrapedArticle::withTrashed()
+        return $this->model::withTrashed()
             ->firstOrNew(['scrape_source' => ScrapeNewsSource::YCombinator, 'scrape_source_id' => $id]);
     }
 }
